@@ -239,11 +239,7 @@ def stop_filter(update, context):
         chat_name = dispatcher.bot.getChat(conn).title
     else:
         chat_id = update.effective_chat.id
-        if chat.type == "private":
-            chat_name = "Local filters"
-        else:
-            chat_name = chat.title
-
+        chat_name = "Local filters" if chat.type == "private" else chat.title
     if len(args) < 2:
         send_message(update.effective_message, "What should i stop?")
         return
@@ -282,7 +278,7 @@ def reply_filter(update, context):
 
     chat_filters = sql.get_chat_triggers(chat.id)
     for keyword in chat_filters:
-        pattern = r"( |^|[^\w])" + re.escape(keyword) + r"( |$|[^\w])"
+        pattern = f"( |^|[^\\w]){re.escape(keyword)}( |$|[^\\w])"
         if re.search(pattern, to_match, flags=re.IGNORECASE):
             if MessageHandlerChecker.check_user(update.effective_user.id):
                 return
@@ -328,11 +324,10 @@ def reply_filter(update, context):
                                 return
                             log.exception("Error in filters: " + excp.message)
                             return
-                    valid_format = escape_invalid_curly_brackets(
+                    if valid_format := escape_invalid_curly_brackets(
                         text,
                         VALID_WELCOME_FORMATTERS,
-                    )
-                    if valid_format:
+                    ):
                         filtext = valid_format.format(
                             first=escape(message.from_user.first_name),
                             last=escape(
@@ -377,16 +372,14 @@ def reply_filter(update, context):
                             reply_markup=keyboard,
                         )
                     except BadRequest as excp:
-                        log.exception("Error in filters: " + excp.message)
+                        log.exception(f"Error in filters: {excp.message}")
                         try:
                             send_message(
                                 update.effective_message,
                                 get_exception(excp, filt, chat),
                             )
                         except BadRequest as excp:
-                            log.exception(
-                                "Failed to send message: " + excp.message,
-                            )
+                            log.exception(f"Failed to send message: {excp.message}")
                 elif ENUM_FUNC_MAP[filt.file_type] == dispatcher.bot.send_sticker:
                     ENUM_FUNC_MAP[filt.file_type](
                         chat.id,
@@ -470,7 +463,7 @@ def reply_filter(update, context):
                 try:
                     send_message(update.effective_message, filt.reply)
                 except BadRequest as excp:
-                    log.exception("Error in filters: " + excp.message)
+                    log.exception(f"Error in filters: {excp.message}")
             break
 
 

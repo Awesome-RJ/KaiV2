@@ -43,8 +43,17 @@ def split_message(msg: str) -> List[str]:
 
 
 def paginate_modules(page_n: int, module_dict: Dict, prefix, chat=None) -> List:
-    if not chat:
-        modules = sorted(
+    modules = sorted(
+            [
+                EqInlineKeyboardButton(
+                    x.__mod_name__,
+                    callback_data="{}_module({},{})".format(
+                        prefix, chat, x.__mod_name__.lower()
+                    ),
+                )
+                for x in module_dict.values()
+            ]
+        ) if chat else sorted(
             [
                 EqInlineKeyboardButton(
                     x.__mod_name__,
@@ -55,19 +64,6 @@ def paginate_modules(page_n: int, module_dict: Dict, prefix, chat=None) -> List:
                 for x in module_dict.values()
             ]
         )
-    else:
-        modules = sorted(
-            [
-                EqInlineKeyboardButton(
-                    x.__mod_name__,
-                    callback_data="{}_module({},{})".format(
-                        prefix, chat, x.__mod_name__.lower()
-                    ),
-                )
-                for x in module_dict.values()
-            ]
-        )
-
     pairs = [modules[i * 3 : (i + 1) * 3] for i in range((len(modules) + 3 - 1) // 3)]
 
     round_num = len(modules) / 3
@@ -128,14 +124,12 @@ def build_keyboard(buttons):
 
 
 def revert_buttons(buttons):
-    res = ""
-    for btn in buttons:
-        if btn.same_line:
-            res += "\n[{}](buttonurl://{}:same)".format(btn.name, btn.url)
-        else:
-            res += "\n[{}](buttonurl://{})".format(btn.name, btn.url)
-
-    return res
+    return "".join(
+        "\n[{}](buttonurl://{}:same)".format(btn.name, btn.url)
+        if btn.same_line
+        else "\n[{}](buttonurl://{})".format(btn.name, btn.url)
+        for btn in buttons
+    )
 
 
 def build_keyboard_parser(bot, chat_id, buttons):

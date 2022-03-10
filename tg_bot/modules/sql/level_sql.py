@@ -31,29 +31,28 @@ def is_level(user_id: int, role: str = None):
 
 def get_level_role(user_id: int):
     with SESSION() as local_session:
-        ret = local_session.query(Levels).get({"user_id": user_id})
-        if ret:
+        if ret := local_session.query(Levels).get({"user_id": user_id}):
             return ret.role_name
     return None
 
 
 def get_levels(role: str = None):
     with SESSION() as local_session:
-        if not role:
-            return local_session.query(Levels).all()
-        return local_session.query(Levels).filter(Levels.role_name == role).all()
+        return (
+            local_session.query(Levels).filter(Levels.role_name == role).all()
+            if role
+            else local_session.query(Levels).all()
+        )
 
 
 def set_level_role(user_id: int, role: str):
     with SESSION() as local_session:
         try:
-            # Check if the user exists first and create them if they don't.
-            ret = local_session.query(Levels).get({"user_id": user_id})
-            if not ret:
+            if ret := local_session.query(Levels).get({"user_id": user_id}):
+                ret.role_name = role
+            else:
                 ret = Levels(user_id, role)
                 local_session.add(ret)
-            else:
-                ret.role_name = role
             local_session.commit()
             local_session.flush()
         except Exception:
@@ -64,8 +63,7 @@ def set_level_role(user_id: int, role: str):
 def remove_royal(user_id: int):
     with SESSION() as local_session:
         try:
-            ret = local_session.query(Levels).get({"user_id": user_id})
-            if ret:
+            if ret := local_session.query(Levels).get({"user_id": user_id}):
                 local_session.delete(ret)
             local_session.commit()
         except Exception:
